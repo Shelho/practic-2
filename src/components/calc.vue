@@ -1,11 +1,41 @@
 <template>
-  <button class="calc" :class="{ gray: gray }">
+  <button
+    class="calc"
+    @click="$emit('add', text)"
+    @mousedown="onMouseDown"
+    @mouseup="onMouseUp"
+    @touchstart="onMouseDown"
+    @touchend="onMouseUp"
+  >
     {{ text }}
   </button>
 </template>
 
 <script setup>
+import { ref, defineEmits } from "vue";
+
+const emits = defineEmits(["onLongClick", "add"]);
 const props = defineProps(["text"]);
+
+const holdTimer = ref(null);
+const holdTime = ref(500);
+const isPressed = ref(false);
+
+const onMouseDown = () => {
+  isPressed.value = true;
+  holdTimer.value = setTimeout(() => {
+    if (isPressed.value) {
+      onLongClick();
+    }
+  }, holdTime.value);
+};
+const onMouseUp = () => {
+  isPressed.value = false;
+  clearTimeout(holdTimer.value);
+};
+const onLongClick = () => {
+  emits("onLongClick");
+};
 </script>
 
 <style>

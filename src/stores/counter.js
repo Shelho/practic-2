@@ -3,7 +3,9 @@ import { ref } from 'vue'
 
 export const useDataStore = defineStore('counter', {
   state: () => {
-    return { count: '0' }
+    return {
+      count: []
+    }
   },
   actions: {
     increment() {

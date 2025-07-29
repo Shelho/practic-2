@@ -1,35 +1,44 @@
 <template>
   <div class="blocks">
     <div class="top">
-      <div class="count">{{ data.count }}</div>
+      <div class="count">
+        {{ operation }}
+      </div>
     </div>
     <div class="bottom">
       <div id="b1" class="block">
-        <calc style="font-size: 40px" @click="data.count = 0" :text="'AC'" />
-        <calc :text="'+/-'" />
-        <calc :text="'%'" />
-        <calc :text="'÷'" />
+        <calc
+          style="font-size: 40px"
+          @add="clear"
+          @onLongClick="allClear"
+          :text="'AC'"
+        />
+        <calc :text="'+/-'" @add="addValue" />
+        <calc :text="'%'" @add="addValue" />
+        <calc :text="'÷'" @add="addValue" />
       </div>
       <div id="b2" class="block 2">
-        <calc :text="'1'" @click="data.count += '1'" />
-        <calc :text="'2'" @click="data.count += '2'" />
-        <calc :text="'3'" @click="data.count += '3'" />
-        <calc :text="'x'" />
+        <calc :text="'1'" @add="addValue" />
+        <calc :text="'2'" @add="addValue" />
+        <calc :text="'3'" @add="addValue" />
+        <calc :text="'x'" @add="addValue" />
       </div>
       <div id="b2" class="block 3">
-        <calc :text="'4'" @click="data.count += '4'" />
-        <calc :text="'5'" @click="data.count += '5'" />
-        <calc :text="'6'" @click="data.count += '6'" />
-        <calc :text="'-'" />
+        <calc :text="'4'" @add="addValue" />
+        <calc :text="'5'" @add="addValue" />
+        <calc :text="'6'" @add="addValue" />
+        <calc :text="'-'" @add="addValue" />
       </div>
       <div id="b2" class="block 4">
-        <calc :text="'7'" /> <calc :text="'8'" /> <calc :text="'9'" />
-        <calc :text="'+'" />
+        <calc :text="'7'" @add="addValue" />
+        <calc :text="'8'" @add="addValue" />
+        <calc :text="'9'" @add="addValue" />
+        <calc :text="'+'" @add="addValue" />
       </div>
       <div id="b2" class="block 5">
-        <calc class="width" :text="'0'" />
-        <calc :text="','" />
-        <calc :text="'='" />
+        <calc class="width" :text="'0'" @add="addValue" />
+        <calc :text="','" @add="addValue" />
+        <calc :text="'='" @add="calculate" />
       </div>
     </div>
   </div>
@@ -38,10 +47,95 @@
 <script setup>
 import { useDataStore } from "@/stores/counter";
 import calc from "@/components/calc.vue";
+import { storeToRefs } from "pinia";
+import { computed, reactive, ref } from "vue";
 const data = useDataStore();
+let { count } = storeToRefs(data);
+
+const calcInfo = ref([]);
+const res = ref("");
+
+const operation = computed(() => {
+  return res.value || calcInfo.value.reduce((all, el) => all + el, "") || "";
+});
+
+const addValue = (value) => {
+  res.value = "";
+  const lastInd = calcInfo.value.length - 1;
+
+  if (lastInd < 0) return calcInfo.value.push(value);
+
+  if (isNaN(value)) {
+    if (isNaN(calcInfo.value[lastInd])) {
+      calcInfo.value[lastInd] = value;
+    } else {
+      calcInfo.value.push(value);
+    }
+  } else {
+    if (isNaN(calcInfo.value[lastInd])) {
+      calcInfo.value.push(value);
+    } else {
+      calcInfo.value[lastInd] += value;
+    }
+  }
+};
+
+const clear = () => {
+  const lastInd = calcInfo.value.length - 1;
+
+  if (lastInd < 0) return;
+
+  if (calcInfo.value[lastInd].length > 1) {
+    calcInfo.value[lastInd] = calcInfo.value[lastInd].slice(0, -1);
+  } else {
+    calcInfo.value.splice(lastInd, 1);
+  }
+};
+
+const allClear = () => {
+  calcInfo.value = [];
+  res.value = "";
+};
+
+const calculate = () => {
+  let sum = 0;
+  let operator = "";
+
+  calcInfo.value.forEach((el, i) => {
+    if (isNaN(el)) {
+      operator = el;
+    } else {
+      if (!i) return (sum = +el);
+
+      switch (operator) {
+        case "+":
+          sum += +el;
+          break;
+
+        case "-":
+          sum -= +el;
+          break;
+
+        case "x":
+          sum *= +el;
+          break;
+
+        case "÷":
+          sum /= +el;
+          break;
+      }
+    }
+  });
+
+  res.value = sum;
+  calcInfo.value = [sum];
+};
 </script>
 
 <style>
+.isFalse {
+  display: none;
+}
 #b2 :not(:last-child) {
   background-color: #6d6d6d;
 }
@@ -79,6 +173,7 @@ const data = useDataStore();
   left: 320px;
   font-size: 64px;
   color: #fff;
+  padding-right: 10px;
 }
 .top {
   height: 220px;
